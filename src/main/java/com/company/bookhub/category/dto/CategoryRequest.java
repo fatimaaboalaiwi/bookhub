@@ -11,8 +11,11 @@ public record CategoryRequest(
                 example = "Programming",
                 maxLength = 100
         )
-        @NotBlank(message = "Category name is required")
-        @Size(max = 100, message = "Category name must not exceed 100 characters")
+        @NotBlank(message = "{validation.required}")
+        @Size(
+                max = 100,
+                message = "{validation.max_length}"
+        )
         String name,
 
         @Schema(
@@ -20,7 +23,10 @@ public record CategoryRequest(
                 example = "Books about programming and software development",
                 maxLength = 255
         )
-        @Size(max = 255, message = "Category description must not exceed 255 characters")
+        @Size(
+                max = 255,
+                message = "{validation.max_length}"
+        )
         String description
 
 ) {

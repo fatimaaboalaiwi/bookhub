@@ -4,6 +4,7 @@ import com.company.bookhub.category.dto.CategoryRequest;
 import com.company.bookhub.category.dto.CategoryResponse;
 import com.company.bookhub.category.service.CategoryService;
 import com.company.bookhub.common.constant.ApiPaths;
+import com.company.bookhub.common.dto.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -52,7 +53,7 @@ public class CategoryController {
                     description = "Category already exists"
             )
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('CATEGORY_CREATE')")
     @PostMapping
     public ResponseEntity<CategoryResponse> create(
             @Valid @RequestBody CategoryRequest request) {
@@ -72,6 +73,7 @@ public class CategoryController {
             summary = "Get category by ID",
             description = "Returns a category by its ID."
     )
+    @PreAuthorize("hasAuthority('CATEGORY_READ')")
     @GetMapping("/{id}")
     public ResponseEntity<CategoryResponse> getById(
             @PathVariable Long id) {
@@ -89,6 +91,7 @@ public class CategoryController {
             summary = "Get all categories",
             description = "Returns all categories."
     )
+    @PreAuthorize("hasAuthority('CATEGORY_READ')")
     @GetMapping
     public ResponseEntity<List<CategoryResponse>> getAll() {
 
@@ -105,7 +108,7 @@ public class CategoryController {
             summary = "Update a category",
             description = "Updates an existing category. Requires ADMIN role."
     )
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('CATEGORY_UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryResponse> update(
             @PathVariable Long id,
@@ -124,13 +127,13 @@ public class CategoryController {
             summary = "Delete a category",
             description = "Deletes a category. Requires ADMIN role."
     )
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('CATEGORY_DELETE')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<CommonResponse<?>> delete(
             @PathVariable Long id) {
 
         categoryService.delete(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new CommonResponse<>(0, "Success", null));
     }
 }

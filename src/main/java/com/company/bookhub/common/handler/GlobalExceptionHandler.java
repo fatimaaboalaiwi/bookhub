@@ -3,59 +3,215 @@ package com.company.bookhub.common.handler;
 import com.company.bookhub.common.dto.ErrorResponse;
 import com.company.bookhub.common.exception.DuplicateResourceException;
 import com.company.bookhub.common.exception.ResourceNotFoundException;
+import com.company.bookhub.common.i18n.MessageService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.company.bookhub.common.exception.NumverifyException;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
-@RestControllerAdvice // Tells Spring this class handles exceptions for all Controllers
+@Slf4j
+@RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
-    // Handles 404 Not Found
+    private final MessageService messageService;
+
+
+    // =========================================
+    // RESOURCE NOT FOUND
+    // =========================================
+
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(
+            ResourceNotFoundException ex,
+            Locale locale) {
+
+        String message = messageService.getMessage(
+                ex.getMessage(),
+                locale
+        );
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
+                message,
                 LocalDateTime.now()
         );
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.NOT_FOUND
+        );
     }
 
-    // Handles 409 Conflict (Duplicate)
+
+    // =========================================
+    // DUPLICATE RESOURCE
+    // =========================================
+
     @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateResource(DuplicateResourceException ex) {
+    public ResponseEntity<ErrorResponse> handleDuplicateResource(
+            DuplicateResourceException ex,
+            Locale locale) {
+
+        String message = messageService.getMessage(
+                ex.getMessage(),
+                locale
+        );
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
-                ex.getMessage(),
+                message,
                 LocalDateTime.now()
         );
-        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.CONFLICT
+        );
     }
 
-    // Handles 400 Bad Request (Validation errors from @Valid)
+
+    // =========================================
+    // VALIDATION
+    // =========================================
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(
+            MethodArgumentNotValidException ex,
+            Locale locale) {
+
+        String errorMessage = ex.getBindingResult()
+                .getAllErrors()
+                .get(0)
+                .getDefaultMessage();
+
+        String message = messageService.getMessage(
+                "validation.failed",
+                locale
+        );
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Validation failed: " + errorMessage,
+                message + ": " + errorMessage,
                 LocalDateTime.now()
         );
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.BAD_REQUEST
+        );
     }
 
-    // Handles any other unexpected 500 errors
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+
+    // =========================================
+    // ACCESS DENIED
+    // =========================================
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex,
+            Locale locale) {
+
+        String message = messageService.getMessage(
+                "access.denied",
+                locale
+        );
+
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "An unexpected error occurred: " + ex.getMessage(),
+                HttpStatus.FORBIDDEN.value(),
+                message,
                 LocalDateTime.now()
         );
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.FORBIDDEN
+        );
+    }
+
+
+    // =========================================
+    // INVALID LOGIN CREDENTIALS
+    // =========================================
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentials(
+            BadCredentialsException ex,
+            Locale locale) {
+
+        String message = messageService.getMessage(
+                "auth.invalid_credentials",
+                locale
+        );
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                message,
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.UNAUTHORIZED
+        );
+    }
+
+
+    // =========================================
+    // GENERIC EXCEPTION
+    // =========================================
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(
+            Exception ex,
+            Locale locale) {
+
+        String message = messageService.getMessage(
+                "unexpected.error",
+                locale
+        );
+
+        log.error("---- error: ", ex);
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                message,
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+    @ExceptionHandler(NumverifyException.class)
+    public ResponseEntity<ErrorResponse> handleNumverifyException(
+            NumverifyException ex,
+            Locale locale) {
+
+        String message = messageService.getMessage(
+                ex.getMessage(),
+                locale
+        );
+
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                message,
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(
+                error,
+                HttpStatus.SERVICE_UNAVAILABLE
+        );
     }
 }

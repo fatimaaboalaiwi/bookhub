@@ -26,7 +26,7 @@ public class AuthorServiceImpl implements AuthorService {
     public AuthorResponse createAuthor(AuthorRequest request) {
 
         if (authorRepository.findByName(request.getName()).isPresent()) {
-            throw new DuplicateResourceException("Author already exists");
+            throw new DuplicateResourceException("author.already_exists");
         }
 
         Author author = authorMapper.toEntity(request);
@@ -42,7 +42,7 @@ public class AuthorServiceImpl implements AuthorService {
 
         Author author = authorRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Author not found with id: " + id)
+                        new ResourceNotFoundException( "author.not_found")
                 );
 
         return authorMapper.toResponse(author);

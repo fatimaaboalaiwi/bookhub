@@ -36,7 +36,7 @@ public class BookController {
 
     @Operation(
             summary = "Create a book",
-            description = "Creates a new book. Requires ADMIN role."
+            description = "Creates a new book. Requires BOOK_CREATE permission."
     )
     @ApiResponses({
             @ApiResponse(
@@ -56,7 +56,7 @@ public class BookController {
                     description = "ISBN already exists"
             )
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('BOOK_CREATE')")
     @PostMapping
     public ResponseEntity<BookResponse> create(
             @Valid @RequestBody BookRequest request) {
@@ -90,6 +90,7 @@ public class BookController {
                     description = "Book not found"
             )
     })
+    @PreAuthorize("hasAuthority('BOOK_READ')")
     @GetMapping("/{id}")
     public ResponseEntity<BookResponse> getById(
             @PathVariable Long id) {
@@ -113,6 +114,7 @@ public class BookController {
                     description = "Books retrieved successfully"
             )
     })
+    @PreAuthorize("hasAuthority('BOOK_READ')")
     @GetMapping
     public ResponseEntity<PageResponse<BookResponse>> getAll(
             @RequestParam(required = false) Long authorId,
@@ -136,7 +138,7 @@ public class BookController {
 
     @Operation(
             summary = "Update a book",
-            description = "Updates an existing book. Requires ADMIN role."
+            description = "Updates an existing book. Requires BOOK_UPDATE permission."
     )
     @ApiResponses({
             @ApiResponse(
@@ -156,7 +158,7 @@ public class BookController {
                     description = "ISBN already exists"
             )
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('BOOK_UPDATE')")
     @PutMapping("/{id}")
     public ResponseEntity<BookResponse> update(
             @PathVariable Long id,
@@ -173,7 +175,7 @@ public class BookController {
 
     @Operation(
             summary = "Delete a book",
-            description = "Deletes a book by its ID. Requires ADMIN role."
+            description = "Deletes a book by its ID. Requires BOOK_DELETE permission."
     )
     @ApiResponses({
             @ApiResponse(
@@ -185,7 +187,7 @@ public class BookController {
                     description = "Book not found"
             )
     })
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('BOOK_DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id) {

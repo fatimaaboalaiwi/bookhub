@@ -5,9 +5,9 @@ import com.company.bookhub.auth.dto.LoginRequest;
 import com.company.bookhub.auth.dto.RegisterRequest;
 import com.company.bookhub.auth.service.AuthService;
 import com.company.bookhub.security.JwtService;
-import com.company.bookhub.user.entity.Role;
+import com.company.bookhub.role.entity.Role;
 import com.company.bookhub.user.entity.User;
-import com.company.bookhub.user.repository.RoleRepository;
+import com.company.bookhub.role.repository.RoleRepository;
 import com.company.bookhub.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +15,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.company.bookhub.common.exception.DuplicateResourceException;
 
 import java.util.Set;
 
@@ -35,13 +36,13 @@ public class AuthServiceImpl implements AuthService {
 
         if (userRepository.existsByUsername(request.username())) {
             throw new IllegalArgumentException(
-                    "Username already exists"
+                    "auth.username_exists"
             );
         }
 
         Role userRole = roleRepository.findByName("USER")
                 .orElseThrow(() ->
-                        new RuntimeException("USER not found")
+                        new RuntimeException("USER role not found")
                 );
 
         User user = User.builder()
@@ -61,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        request.username().trim(),
+                        request.username(),
                         request.password()
                 )
         );

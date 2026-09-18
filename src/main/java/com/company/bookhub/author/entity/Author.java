@@ -3,8 +3,6 @@ package com.company.bookhub.author.entity;
 import com.company.bookhub.book.entity.Book;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -30,7 +28,6 @@ public class Author {
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id")
+    @OneToMany(mappedBy = "author", fetch = FetchType.LAZY)
     private List<Book> books;
 }

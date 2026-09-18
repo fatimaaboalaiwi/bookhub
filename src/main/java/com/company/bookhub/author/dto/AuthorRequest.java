@@ -1,6 +1,5 @@
 package com.company.bookhub.author.dto;
 
-import com.company.bookhub.common.constant.ValidationMessages;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -18,7 +17,10 @@ public class AuthorRequest {
             example = "Joshua Bloch",
             maxLength = 150
     )
-    @Size(max = 150)
-    @NotBlank(message = ValidationMessages.AUTHOR_NAME_REQUIRED)
+    @Size(
+            max = 150,
+            message = "{validation.max_length}"
+    )
+    @NotBlank(message = "{validation.required}")
     private String name;
 }

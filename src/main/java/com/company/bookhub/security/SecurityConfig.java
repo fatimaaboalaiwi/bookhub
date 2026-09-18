@@ -80,7 +80,8 @@ public class SecurityConfig {
 
                         // Authentication
                         .requestMatchers(
-                                "/api/v1/auth/**"
+                                "/api/v1/auth/**",
+                                "/api/v1/phone/**"
                         ).permitAll()
 
                         // Swagger

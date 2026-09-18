@@ -52,7 +52,7 @@ public class AuthorController {
                     description = "Author already exists"
             )
     })
-    @PreAuthorize("hasRole('ROLE_USER')")
+    //@PreAuthorize("hasAuthority('AUTH_C')")
     @PostMapping
     public ResponseEntity<AuthorResponse> createAuthor(
             @Valid @RequestBody AuthorRequest request) {
@@ -72,7 +72,9 @@ public class AuthorController {
             summary = "Get author by ID",
             description = "Returns an author by its ID."
     )
+    @PreAuthorize("hasAuthority('AUTHOR_READ')")
     @GetMapping("/{id}")
+    //@PreAuthorize("hasAuthority('AUTH_G_ID')")
     public ResponseEntity<AuthorResponse> getAuthorById(
             @PathVariable Long id) {
 
@@ -89,7 +91,9 @@ public class AuthorController {
             summary = "Get all authors",
             description = "Returns all authors."
     )
+    @PreAuthorize("hasAuthority('AUTHOR_READ')")
     @GetMapping
+    //@PreAuthorize("hasAuthority('AUTH_G_ALL')")
     public ResponseEntity<List<AuthorResponse>> getAllAuthors() {
 
         return ResponseEntity.ok(
@@ -105,7 +109,7 @@ public class AuthorController {
             summary = "Update an author",
             description = "Updates an existing author. Requires ADMIN role."
     )
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('UPDATE_AUTHOR')")
     @PutMapping("/{id}")
     public ResponseEntity<AuthorResponse> updateAuthor(
             @PathVariable Long id,
@@ -124,7 +128,7 @@ public class AuthorController {
             summary = "Delete an author",
             description = "Deletes an author. Requires ADMIN role."
     )
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('DELETE_AUTHOR')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAuthor(
             @PathVariable Long id) {

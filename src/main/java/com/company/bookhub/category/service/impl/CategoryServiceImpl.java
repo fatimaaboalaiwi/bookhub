@@ -27,7 +27,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         if (categoryRepository.existsByName(request.name())) {
             throw new DuplicateResourceException(
-                    "Category with name '" + request.name() + "' already exists"
+                    "category.already_exists"
             );
         }
 
@@ -47,7 +47,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Category with id " + id + " not found"
+                                "category.not_found"
                         )
                 );
 

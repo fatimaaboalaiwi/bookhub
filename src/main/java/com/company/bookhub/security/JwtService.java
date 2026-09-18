@@ -1,20 +1,20 @@
 package com.company.bookhub.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Service
 public class JwtService {
 
     private final SecretKey secretKey;
-
     private final long expiration;
 
     public JwtService(
@@ -22,7 +22,7 @@ public class JwtService {
             @Value("${jwt.expiration}") long expiration) {
 
         this.secretKey = Keys.hmacShaKeyFor(
-                Decoders.BASE64.decode(secret)
+                secret.getBytes(StandardCharsets.UTF_8)
         );
 
         this.expiration = expiration;
@@ -52,7 +52,6 @@ public class JwtService {
     public boolean isTokenValid(
             String token,
             String username) {
-
         String extractedUsername =
                 extractUsername(token);
 
@@ -62,6 +61,7 @@ public class JwtService {
 
     private boolean isTokenExpired(String token) {
 
+
         return extractAllClaims(token)
                 .getExpiration()
                 .before(new Date());
@@ -70,7 +70,7 @@ public class JwtService {
     private Claims extractAllClaims(String token) {
 
         return Jwts.parser()
-                .verifyWith(secretKey)
+                .setSigningKey(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

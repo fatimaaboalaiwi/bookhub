@@ -42,7 +42,7 @@ public class BookServiceImpl implements BookService {
         // Check duplicate ISBN
         if (bookRepository.existsByIsbn(request.isbn())) {
             throw new DuplicateResourceException(
-                    "Book with ISBN '" + request.isbn() + "' already exists"
+                    "book.isbn_exists"
             );
         }
 
@@ -50,7 +50,7 @@ public class BookServiceImpl implements BookService {
         Author author = authorRepository.findById(request.authorId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Author with id " + request.authorId() + " not found"
+                                "author.not_found"
                         )
                 );
 
@@ -58,7 +58,7 @@ public class BookServiceImpl implements BookService {
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Category with id " + request.categoryId() + " not found"
+                                "category.not_found"
                         )
                 );
 
@@ -89,7 +89,7 @@ public class BookServiceImpl implements BookService {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Book with id " + id + " not found"
+                                "book.not_found"
                         )
                 );
 
@@ -110,13 +110,6 @@ public class BookServiceImpl implements BookService {
             String title,
             Pageable pageable) {
 
-        /*
-         * Build the specification.
-         *
-         * Each filter is optional.
-         * If the value is null, that filter is ignored.
-         */
-
         Specification<Book> specification =
                 Specification.allOf(
                         BookSpecification.hasAuthorId(authorId),
@@ -124,26 +117,8 @@ public class BookServiceImpl implements BookService {
                         BookSpecification.titleContains(title)
                 );
 
-        /*
-         * Ask Spring Data JPA to apply:
-         *
-         * 1. filters
-         * 2. pagination
-         * 3. sorting
-         */
-
         Page<Book> bookPage =
                 bookRepository.findAll(specification, pageable);
-
-        /*
-         * Convert:
-         *
-         * Page<Book>
-         *
-         * into:
-         *
-         * PageResponse<BookResponse>
-         */
 
         return new PageResponse<>(
                 bookPage
@@ -175,7 +150,7 @@ public class BookServiceImpl implements BookService {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Book with id " + id + " not found"
+                                "book.not_found"
                         )
                 );
 
@@ -184,7 +159,7 @@ public class BookServiceImpl implements BookService {
                 && bookRepository.existsByIsbn(request.isbn())) {
 
             throw new DuplicateResourceException(
-                    "Book with ISBN '" + request.isbn() + "' already exists"
+                    "book.isbn_exists"
             );
         }
 
@@ -192,8 +167,7 @@ public class BookServiceImpl implements BookService {
         Author author = authorRepository.findById(request.authorId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Author with id " + request.authorId()
-                                        + " not found"
+                                "author.not_found"
                         )
                 );
 
@@ -201,8 +175,7 @@ public class BookServiceImpl implements BookService {
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Category with id " + request.categoryId()
-                                        + " not found"
+                                "category.not_found"
                         )
                 );
 
@@ -234,7 +207,7 @@ public class BookServiceImpl implements BookService {
         Book book = bookRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Book with id " + id + " not found"
+                                "book.not_found"
                         )
                 );
 

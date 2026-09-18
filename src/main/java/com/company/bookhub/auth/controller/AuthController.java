@@ -8,7 +8,6 @@ import com.company.bookhub.common.constant.ApiPaths;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,9 +17,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-
     @PostMapping("/register")
-    @PreAuthorize("hasRole('ROLE_USER')")
     public ResponseEntity<String> register(
             @Valid @RequestBody RegisterRequest request) {
 
@@ -29,13 +26,10 @@ public class AuthController {
         );
     }
 
-
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(
             @Valid @RequestBody LoginRequest request) {
 
-        return ResponseEntity.ok(
-                authService.login(request)
-        );
+        return ResponseEntity.ok(authService.login(request));
     }
 }
