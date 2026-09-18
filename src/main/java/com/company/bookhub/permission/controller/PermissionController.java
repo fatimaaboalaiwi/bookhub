@@ -20,7 +20,7 @@ public class PermissionController {
     private final PermissionService permissionService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_C')")
     public ResponseEntity<PermissionResponse> createPermission(
             @Valid @RequestBody PermissionRequest request) {
 
@@ -30,7 +30,7 @@ public class PermissionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     public ResponseEntity<List<PermissionResponse>> getAllPermissions() {
 
         return ResponseEntity.ok(

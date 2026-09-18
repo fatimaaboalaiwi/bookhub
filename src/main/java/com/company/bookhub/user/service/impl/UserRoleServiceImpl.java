@@ -99,4 +99,6 @@ public class UserRoleServiceImpl implements UserRoleService {
                 .map(RoleResponse::from)
                 .toList();
     }
+
+//    #TODO assign permissions to role
 }
