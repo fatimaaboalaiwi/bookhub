@@ -1,4 +1,4 @@
-package com.company.bookhub.book.service.impl;
+package com.company.bookhub.book.service;
 
 import com.company.bookhub.author.entity.Author;
 import com.company.bookhub.author.repository.AuthorRepository;
@@ -7,7 +7,6 @@ import com.company.bookhub.book.dto.BookResponse;
 import com.company.bookhub.book.entity.Book;
 import com.company.bookhub.book.mapper.BookMapper;
 import com.company.bookhub.book.repository.BookRepository;
-import com.company.bookhub.book.service.BookService;
 import com.company.bookhub.book.specification.BookSpecification;
 import com.company.bookhub.category.entity.Category;
 import com.company.bookhub.category.repository.CategoryRepository;
@@ -67,6 +66,8 @@ public class BookServiceImpl implements BookService {
 
         book.setTitle(request.title());
         book.setIsbn(request.isbn());
+        book.setPublishedYear(request.publishedYear());
+        book.setPrice(request.price());
         book.setAuthor(author);
         book.setCategory(category);
 
@@ -182,6 +183,8 @@ public class BookServiceImpl implements BookService {
         // Update managed entity
         book.setTitle(request.title());
         book.setIsbn(request.isbn());
+        book.setPublishedYear(request.publishedYear());
+        book.setPrice(request.price());
         book.setAuthor(author);
         book.setCategory(category);
 

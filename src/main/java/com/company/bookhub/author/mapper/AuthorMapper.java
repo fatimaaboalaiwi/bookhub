@@ -1,3 +1,4 @@
+
 package com.company.bookhub.author.mapper;
 
 import com.company.bookhub.author.dto.AuthorRequest;
@@ -10,8 +11,8 @@ import org.mapstruct.Mapping;
 public interface AuthorMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "biography", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "books", ignore = true)
     Author toEntity(AuthorRequest request);
 
     AuthorResponse toResponse(Author author);

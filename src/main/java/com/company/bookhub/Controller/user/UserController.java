@@ -1,4 +1,4 @@
-package com.company.bookhub.auth.controller;
+package com.company.bookhub.Controller.user;
 
 import com.company.bookhub.auth.dto.AuthResponse;
 import com.company.bookhub.auth.dto.LoginRequest;
@@ -10,12 +10,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
+
 @RestController
 @RequestMapping(ApiPaths.AUTH)
 @RequiredArgsConstructor
-public class AuthController {
+public class UserController {
 
     private final AuthService authService;
+
 
     @PostMapping("/register")
     public ResponseEntity<String> register(
@@ -32,4 +35,5 @@ public class AuthController {
 
         return ResponseEntity.ok(authService.login(request));
     }
+
 }

@@ -1,3 +1,4 @@
+
 package com.company.bookhub.author.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,4 +24,10 @@ public class AuthorRequest {
     )
     @NotBlank(message = "{validation.required}")
     private String name;
+
+    @Schema(
+            description = "Biography of the author",
+            example = "Author of Effective Java"
+    )
+    private String biography;
 }

@@ -1,10 +1,9 @@
-package com.company.bookhub.category.controller;
+package com.company.bookhub.Controller.catalog;
 
-import com.company.bookhub.category.dto.CategoryRequest;
-import com.company.bookhub.category.dto.CategoryResponse;
-import com.company.bookhub.category.service.CategoryService;
+import com.company.bookhub.author.dto.AuthorRequest;
+import com.company.bookhub.author.dto.AuthorResponse;
+import com.company.bookhub.author.service.AuthorService;
 import com.company.bookhub.common.constant.ApiPaths;
-import com.company.bookhub.common.dto.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -20,29 +19,29 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.util.List;
 
 @RestController
-@RequestMapping(ApiPaths.CATEGORIES)
+@RequestMapping(ApiPaths.AUTHORS)
 @RequiredArgsConstructor
 @Tag(
-        name = "Categories",
-        description = "Operations for managing categories"
+        name = "Catalog",
+        description = "APIs for managing books, authors and categories"
 )
 @SecurityRequirement(name = "bearerAuth")
-public class CategoryController {
+public class AuthorController {
 
-    private final CategoryService categoryService;
+    private final AuthorService authorService;
 
     // =========================
     // CREATE - ADMIN ONLY
     // =========================
 
     @Operation(
-            summary = "Create a category",
-            description = "Creates a new category. Requires ADMIN role."
+            summary = "Create an author",
+            description = "Creates a new author. Requires ADMIN role."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
-                    description = "Category created successfully"
+                    description = "Author created successfully"
             ),
             @ApiResponse(
                     responseCode = "400",
@@ -50,15 +49,15 @@ public class CategoryController {
             ),
             @ApiResponse(
                     responseCode = "409",
-                    description = "Category already exists"
+                    description = "Author already exists"
             )
     })
-    @PreAuthorize("hasAuthority('CATEGORY_CREATE')")
+    //@PreAuthorize("hasAuthority('AUTH_C')")
     @PostMapping
-    public ResponseEntity<CategoryResponse> create(
-            @Valid @RequestBody CategoryRequest request) {
+    public ResponseEntity<AuthorResponse> createAuthor(
+            @Valid @RequestBody AuthorRequest request) {
 
-        CategoryResponse response = categoryService.create(request);
+        AuthorResponse response = authorService.createAuthor(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -70,16 +69,17 @@ public class CategoryController {
     // =========================
 
     @Operation(
-            summary = "Get category by ID",
-            description = "Returns a category by its ID."
+            summary = "Get author by ID",
+            description = "Returns an author by its ID."
     )
-    @PreAuthorize("hasAuthority('CATEGORY_READ')")
+    @PreAuthorize("hasAuthority('AUTHOR_READ')")
     @GetMapping("/{id}")
-    public ResponseEntity<CategoryResponse> getById(
+    //@PreAuthorize("hasAuthority('AUTH_G_ID')")
+    public ResponseEntity<AuthorResponse> getAuthorById(
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                categoryService.getById(id)
+                authorService.getAuthorById(id)
         );
     }
 
@@ -88,15 +88,16 @@ public class CategoryController {
     // =========================
 
     @Operation(
-            summary = "Get all categories",
-            description = "Returns all categories."
+            summary = "Get all authors",
+            description = "Returns all authors."
     )
-    @PreAuthorize("hasAuthority('CATEGORY_READ')")
+    @PreAuthorize("hasAuthority('AUTHOR_READ')")
     @GetMapping
-    public ResponseEntity<List<CategoryResponse>> getAll() {
+    //@PreAuthorize("hasAuthority('AUTH_G_ALL')")
+    public ResponseEntity<List<AuthorResponse>> getAllAuthors() {
 
         return ResponseEntity.ok(
-                categoryService.getAll()
+                authorService.getAllAuthors()
         );
     }
 
@@ -105,17 +106,17 @@ public class CategoryController {
     // =========================
 
     @Operation(
-            summary = "Update a category",
-            description = "Updates an existing category. Requires ADMIN role."
+            summary = "Update an author",
+            description = "Updates an existing author. Requires ADMIN role."
     )
-    @PreAuthorize("hasAuthority('CATEGORY_UPDATE')")
+    @PreAuthorize("hasAuthority('UPDATE_AUTHOR')")
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryResponse> update(
+    public ResponseEntity<AuthorResponse> updateAuthor(
             @PathVariable Long id,
-            @Valid @RequestBody CategoryRequest request) {
+            @Valid @RequestBody AuthorRequest request) {
 
         return ResponseEntity.ok(
-                categoryService.update(id, request)
+                authorService.updateAuthor(id, request)
         );
     }
 
@@ -124,16 +125,16 @@ public class CategoryController {
     // =========================
 
     @Operation(
-            summary = "Delete a category",
-            description = "Deletes a category. Requires ADMIN role."
+            summary = "Delete an author",
+            description = "Deletes an author. Requires ADMIN role."
     )
-    @PreAuthorize("hasAuthority('CATEGORY_DELETE')")
+    @PreAuthorize("hasAuthority('DELETE_AUTHOR')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<CommonResponse<?>> delete(
+    public ResponseEntity<Void> deleteAuthor(
             @PathVariable Long id) {
 
-        categoryService.delete(id);
+        authorService.deleteAuthor(id);
 
-        return ResponseEntity.ok(new CommonResponse<>(0, "Success", null));
+        return ResponseEntity.noContent().build();
     }
 }

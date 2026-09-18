@@ -1,3 +1,4 @@
+
 package com.company.bookhub.permission.service.impl;
 
 import com.company.bookhub.common.exception.DuplicateResourceException;
@@ -29,6 +30,7 @@ public class PermissionServiceImpl implements PermissionService {
             );
         }
 
+        // New permissions are regular permissions by default.
         Permission permission = new Permission(request.name());
 
         Permission savedPermission =

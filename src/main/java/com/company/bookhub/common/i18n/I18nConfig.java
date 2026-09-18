@@ -34,4 +34,5 @@ public class I18nConfig {
 
         return resolver;
     }
+
 }

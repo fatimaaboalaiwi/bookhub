@@ -1,4 +1,4 @@
-package com.company.bookhub.permission.controller;
+package com.company.bookhub.Controller.access;
 
 import com.company.bookhub.permission.dto.PermissionRequest;
 import com.company.bookhub.permission.dto.PermissionResponse;
@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,12 +16,17 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/permissions")
 @RequiredArgsConstructor
+@Tag(
+        name = "Access Management",
+        description = "APIs for managing users, roles and permissions"
+)
+
 public class PermissionController {
 
     private final PermissionService permissionService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_CREATE')")
     public ResponseEntity<PermissionResponse> createPermission(
             @Valid @RequestBody PermissionRequest request) {
 
@@ -30,7 +36,7 @@ public class PermissionController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('PERMISSION_READ')")
     public ResponseEntity<List<PermissionResponse>> getAllPermissions() {
 
         return ResponseEntity.ok(
@@ -39,7 +45,7 @@ public class PermissionController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('GET_PERMISSION_BY_ID')")
     public ResponseEntity<PermissionResponse> getPermissionById(
             @PathVariable Long id) {
 

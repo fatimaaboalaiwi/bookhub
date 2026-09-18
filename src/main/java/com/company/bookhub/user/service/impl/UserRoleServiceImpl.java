@@ -11,6 +11,8 @@ import com.company.bookhub.user.service.UserRoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -76,6 +78,21 @@ public class UserRoleServiceImpl implements UserRoleService {
                     "role.not_assigned"
             );
         }
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        String currentUsername = authentication.getName();
+
+//        if ("ADMIN".equals(role.getName())
+//                && user.getUsername().equals(currentUsername)) {
+//
+//            throw new IllegalStateException(
+//                    "Admin cannot remove ADMIN role from himself"
+//            );
+//        }
+
 
         user.getRoles().remove(role);
 
@@ -99,4 +116,6 @@ public class UserRoleServiceImpl implements UserRoleService {
                 .map(RoleResponse::from)
                 .toList();
     }
+
+//    #TODO assign permissions to role
 }

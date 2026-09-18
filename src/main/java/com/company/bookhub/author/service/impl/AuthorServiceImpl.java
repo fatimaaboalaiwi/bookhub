@@ -73,6 +73,7 @@ public class AuthorServiceImpl implements AuthorService {
         }
 
         author.setName(request.getName());
+        author.setBiography(request.getBiography());
 
         Author updatedAuthor = authorRepository.save(author);
 

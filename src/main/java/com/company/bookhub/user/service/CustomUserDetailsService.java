@@ -19,7 +19,6 @@ import java.util.List;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
-
     @Override
     public UserDetails loadUserByUsername(String username)
             throws UsernameNotFoundException {
@@ -31,11 +30,17 @@ public class CustomUserDetailsService implements UserDetailsService {
                         )
                 );
 
-        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        List<SimpleGrantedAuthority> authorities =
+                new ArrayList<>();
 
         for (Role role : user.getRoles()) {
 
-            // Permission authorities
+            authorities.add(
+                    new SimpleGrantedAuthority(
+                            "ROLE_" + role.getName()
+                    )
+            );
+
             for (Permission permission : role.getPermissions()) {
 
                 authorities.add(
@@ -46,10 +51,20 @@ public class CustomUserDetailsService implements UserDetailsService {
             }
         }
 
+        System.out.println("USERNAME = " + user.getUsername());
+        System.out.println("ROLES = " + user.getRoles()
+                .stream()
+                .map(Role::getName)
+                .toList());
+        System.out.println("AUTHORITIES = " + authorities);
+
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getUsername())
                 .password(user.getPassword())
                 .authorities(authorities)
                 .build();
     }
-}
+
+
+
+    }

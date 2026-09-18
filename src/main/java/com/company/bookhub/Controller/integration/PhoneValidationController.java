@@ -1,4 +1,4 @@
-package com.company.bookhub.integration.numverify.controller;
+package com.company.bookhub.Controller.integration;
 
 import com.company.bookhub.integration.numverify.dto.NumverifyResponse;
 import com.company.bookhub.integration.numverify.dto.PhoneValidationRequest;
@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/phone")
 @RequiredArgsConstructor
 @Tag(
-        name = "Phone Validation",
-        description = "Phone number validation APIs"
+        name = "Integrations",
+        description = "APIs for external service integrations"
 )
 public class PhoneValidationController {
 

@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.OffsetDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,4 +28,16 @@ public class AuthorResponse {
             example = "Joshua Bloch"
     )
     private String name;
+
+    @Schema(
+            description = "Biography of the author",
+            example = "Author of Effective Java"
+    )
+    private String biography;
+
+    @Schema(
+            description = "Date and time the author was created",
+            example = "2026-10-14T10:30:00+03:00"
+    )
+    private OffsetDateTime createdAt;
 }

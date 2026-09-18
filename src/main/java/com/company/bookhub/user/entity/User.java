@@ -26,6 +26,9 @@ public class User {
     @Column(nullable = false, length = 255)
     private String password;
 
+    @Column(name = "is_system_user", nullable = false)
+    private boolean systemUser;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_roles",

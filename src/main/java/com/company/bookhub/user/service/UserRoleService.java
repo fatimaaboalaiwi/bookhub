@@ -11,4 +11,5 @@ public interface UserRoleService {
     void removeRoleFromUser(Long userId, Long roleId);
 
     List<RoleResponse> getUserRoles(Long userId);
+
 }

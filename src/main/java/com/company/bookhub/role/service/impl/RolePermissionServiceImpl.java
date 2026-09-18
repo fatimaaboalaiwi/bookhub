@@ -1,6 +1,5 @@
 package com.company.bookhub.role.service.impl;
 
-import com.company.bookhub.common.exception.DuplicateResourceException;
 import com.company.bookhub.common.exception.ResourceNotFoundException;
 import com.company.bookhub.permission.dto.PermissionResponse;
 import com.company.bookhub.permission.entity.Permission;
@@ -12,7 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,76 +25,50 @@ public class RolePermissionServiceImpl implements RolePermissionService {
     private final PermissionRepository permissionRepository;
 
     @Override
-    public void assignPermissionToRole(
-            Long roleId,
-            Long permissionId) {
+    public void manageRolePermissions(Long roleId, List<Long> permissionIds) {
 
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "role.not_found"
-                        )
-                );
+                        new ResourceNotFoundException("role.not_found"));
 
-        Permission permission = permissionRepository.findById(permissionId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "permission.not_found"
-                        )
-                );
+        // 1. Keep system permissions already assigned to this role.
+        Set<Permission> systemPermissions = role.getPermissions()
+                .stream()
+                .filter(Permission::isSystemPermission)
+                .collect(Collectors.toSet());
 
-        if (role.getPermissions().contains(permission)) {
-            throw new DuplicateResourceException(
-                    "permission.already_assigned"
-            );
+        // 2. Remove duplicate IDs from the request.
+        Set<Long> uniquePermissionIds = new HashSet<>(permissionIds);
+
+        // 3. Load the permissions requested by the frontend.
+        List<Permission> requestedPermissions =
+                permissionRepository.findAllById(uniquePermissionIds);
+
+        // 4. Ensure every requested permission exists.
+        if (requestedPermissions.size() != uniquePermissionIds.size()) {
+            throw new ResourceNotFoundException("permission.not_found");
         }
 
-        role.getPermissions().add(permission);
+        // 5. Combine requested permissions with the preserved system permissions.
+        Set<Permission> updatedPermissions =
+                new HashSet<>(requestedPermissions);
 
-        roleRepository.save(role);
-    }
+        updatedPermissions.addAll(systemPermissions);
 
-    @Override
-    public void removePermissionFromRole(
-            Long roleId,
-            Long permissionId) {
-
-        Role role = roleRepository.findById(roleId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "role.not_found"
-                        )
-                );
-
-        Permission permission = permissionRepository.findById(permissionId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "permission.not_found"
-                        )
-                );
-
-        if (!role.getPermissions().contains(permission)) {
-            throw new ResourceNotFoundException(
-                    "permission.not_assigned"
-            );
-        }
-
-        role.getPermissions().remove(permission);
+        // 6. Replace the role's permissions without losing its system permissions.
+        role.getPermissions().clear();
+        role.getPermissions().addAll(updatedPermissions);
 
         roleRepository.save(role);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<PermissionResponse> getRolePermissions(
-            Long roleId) {
+    public List<PermissionResponse> getRolePermissions(Long roleId) {
 
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "role.not_found"
-                        )
-                );
+                        new ResourceNotFoundException("role.not_found"));
 
         return role.getPermissions()
                 .stream()

@@ -6,9 +6,12 @@ import java.util.List;
 
 public interface RolePermissionService {
 
-    void assignPermissionToRole(Long roleId, Long permissionId);
+    void manageRolePermissions(
+            Long roleId,
+            List<Long> permissionIds
+    );
 
-    void removePermissionFromRole(Long roleId, Long permissionId);
-
-    List<PermissionResponse> getRolePermissions(Long roleId);
+    List<PermissionResponse> getRolePermissions(
+            Long roleId
+    );
 }

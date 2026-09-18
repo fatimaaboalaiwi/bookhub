@@ -1,3 +1,4 @@
+
 package com.company.bookhub.permission.entity;
 
 import com.company.bookhub.role.entity.Role;
@@ -20,6 +21,9 @@ public class Permission {
 
     @Column(nullable = false, unique = true, length = 100)
     private String name;
+
+    @Column(name = "is_system_permission", nullable = false)
+    private boolean systemPermission = false;
 
     @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
     private Set<Role> roles = new HashSet<>();

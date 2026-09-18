@@ -4,13 +4,15 @@ import com.company.bookhub.permission.entity.Permission;
 
 public record PermissionResponse(
         Long id,
-        String name
+        String name,
+        boolean systemPermission
 ) {
 
     public static PermissionResponse from(Permission permission) {
         return new PermissionResponse(
                 permission.getId(),
-                permission.getName()
+                permission.getName(),
+                permission.isSystemPermission()
         );
     }
 }

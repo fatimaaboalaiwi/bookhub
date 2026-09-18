@@ -1,9 +1,10 @@
-package com.company.bookhub.author.controller;
+package com.company.bookhub.Controller.catalog;
 
-import com.company.bookhub.author.dto.AuthorRequest;
-import com.company.bookhub.author.dto.AuthorResponse;
-import com.company.bookhub.author.service.AuthorService;
+import com.company.bookhub.category.dto.CategoryRequest;
+import com.company.bookhub.category.dto.CategoryResponse;
+import com.company.bookhub.category.service.CategoryService;
 import com.company.bookhub.common.constant.ApiPaths;
+import com.company.bookhub.common.dto.CommonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -19,29 +20,29 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import java.util.List;
 
 @RestController
-@RequestMapping(ApiPaths.AUTHORS)
+@RequestMapping(ApiPaths.CATEGORIES)
 @RequiredArgsConstructor
 @Tag(
-        name = "Authors",
-        description = "Operations for managing authors"
+        name = "Catalog",
+        description = "APIs for managing books, authors and categories"
 )
 @SecurityRequirement(name = "bearerAuth")
-public class AuthorController {
+public class CategoryController {
 
-    private final AuthorService authorService;
+    private final CategoryService categoryService;
 
     // =========================
     // CREATE - ADMIN ONLY
     // =========================
 
     @Operation(
-            summary = "Create an author",
-            description = "Creates a new author. Requires ADMIN role."
+            summary = "Create a category",
+            description = "Creates a new category. Requires ADMIN role."
     )
     @ApiResponses({
             @ApiResponse(
                     responseCode = "201",
-                    description = "Author created successfully"
+                    description = "Category created successfully"
             ),
             @ApiResponse(
                     responseCode = "400",
@@ -49,15 +50,15 @@ public class AuthorController {
             ),
             @ApiResponse(
                     responseCode = "409",
-                    description = "Author already exists"
+                    description = "Category already exists"
             )
     })
-    //@PreAuthorize("hasAuthority('AUTH_C')")
+    @PreAuthorize("hasAuthority('CATEGORY_CREATE')")
     @PostMapping
-    public ResponseEntity<AuthorResponse> createAuthor(
-            @Valid @RequestBody AuthorRequest request) {
+    public ResponseEntity<CategoryResponse> create(
+            @Valid @RequestBody CategoryRequest request) {
 
-        AuthorResponse response = authorService.createAuthor(request);
+        CategoryResponse response = categoryService.create(request);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -69,17 +70,16 @@ public class AuthorController {
     // =========================
 
     @Operation(
-            summary = "Get author by ID",
-            description = "Returns an author by its ID."
+            summary = "Get category by ID",
+            description = "Returns a category by its ID."
     )
-    @PreAuthorize("hasAuthority('AUTHOR_READ')")
+    @PreAuthorize("hasAuthority('CATEGORY_READ')")
     @GetMapping("/{id}")
-    //@PreAuthorize("hasAuthority('AUTH_G_ID')")
-    public ResponseEntity<AuthorResponse> getAuthorById(
+    public ResponseEntity<CategoryResponse> getById(
             @PathVariable Long id) {
 
         return ResponseEntity.ok(
-                authorService.getAuthorById(id)
+                categoryService.getById(id)
         );
     }
 
@@ -88,16 +88,15 @@ public class AuthorController {
     // =========================
 
     @Operation(
-            summary = "Get all authors",
-            description = "Returns all authors."
+            summary = "Get all categories",
+            description = "Returns all categories."
     )
-    @PreAuthorize("hasAuthority('AUTHOR_READ')")
+    @PreAuthorize("hasAuthority('CATEGORY_READ')")
     @GetMapping
-    //@PreAuthorize("hasAuthority('AUTH_G_ALL')")
-    public ResponseEntity<List<AuthorResponse>> getAllAuthors() {
+    public ResponseEntity<List<CategoryResponse>> getAll() {
 
         return ResponseEntity.ok(
-                authorService.getAllAuthors()
+                categoryService.getAll()
         );
     }
 
@@ -106,17 +105,17 @@ public class AuthorController {
     // =========================
 
     @Operation(
-            summary = "Update an author",
-            description = "Updates an existing author. Requires ADMIN role."
+            summary = "Update a category",
+            description = "Updates an existing category. Requires ADMIN role."
     )
-    @PreAuthorize("hasAuthority('UPDATE_AUTHOR')")
+    @PreAuthorize("hasAuthority('CATEGORY_UPDATE')")
     @PutMapping("/{id}")
-    public ResponseEntity<AuthorResponse> updateAuthor(
+    public ResponseEntity<CategoryResponse> update(
             @PathVariable Long id,
-            @Valid @RequestBody AuthorRequest request) {
+            @Valid @RequestBody CategoryRequest request) {
 
         return ResponseEntity.ok(
-                authorService.updateAuthor(id, request)
+                categoryService.update(id, request)
         );
     }
 
@@ -125,16 +124,16 @@ public class AuthorController {
     // =========================
 
     @Operation(
-            summary = "Delete an author",
-            description = "Deletes an author. Requires ADMIN role."
+            summary = "Delete a category",
+            description = "Deletes a category. Requires ADMIN role."
     )
-    @PreAuthorize("hasAuthority('DELETE_AUTHOR')")
+    @PreAuthorize("hasAuthority('CATEGORY_DELETE')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAuthor(
+    public ResponseEntity<CommonResponse<?>> delete(
             @PathVariable Long id) {
 
-        authorService.deleteAuthor(id);
+        categoryService.delete(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(new CommonResponse<>(0, "Success", null));
     }
 }
