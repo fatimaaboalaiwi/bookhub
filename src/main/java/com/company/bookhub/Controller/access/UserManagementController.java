@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
+import com.company.bookhub.common.dto.ApiSuccessResponse;
 import java.util.List;
 
 @RestController
@@ -33,11 +33,13 @@ public class UserManagementController {
 
     @DeleteMapping("/{userId}")
     @PreAuthorize("hasAuthority('USER_DELETE')")
-    public ResponseEntity<Void> deleteUser(
+    public ResponseEntity<ApiSuccessResponse> deleteUser(
             @PathVariable Long userId) {
 
         userService.deleteUser(userId);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiSuccessResponse("User deleted successfully")
+        );
     }
 }

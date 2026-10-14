@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.company.bookhub.common.dto.ApiSuccessResponse;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class RolePermissionController {
     )
     @PutMapping("/{roleId}/permissions")
     @PreAuthorize("hasAuthority('ASSIGN_ROLE_PERMISSIONS')")
-    public ResponseEntity<Void> manageRolePermissions(
+    public ResponseEntity<ApiSuccessResponse> manageRolePermissions(
             @PathVariable Long roleId,
             @Valid @RequestBody RolePermissionRequest request) {
 
@@ -39,7 +40,9 @@ public class RolePermissionController {
                 request.permissionIds()
         );
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiSuccessResponse("Operation completed successfully")
+        );
     }
 
     @Operation(

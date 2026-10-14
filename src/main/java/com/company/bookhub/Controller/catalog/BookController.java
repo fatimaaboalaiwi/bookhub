@@ -20,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.company.bookhub.common.dto.ApiSuccessResponse;
 
 @RestController
 @RequestMapping(ApiPaths.BOOKS)
@@ -151,12 +152,14 @@ public class BookController {
     })
     @PreAuthorize("hasAuthority('BOOK_DELETE')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<ApiSuccessResponse> delete(
             @PathVariable Long id) {
 
         bookService.delete(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiSuccessResponse("Book deleted successfully")
+        );
     }
 
     // =========================

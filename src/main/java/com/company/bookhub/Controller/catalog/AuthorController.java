@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import com.company.bookhub.common.dto.ApiSuccessResponse;
 
 import java.util.List;
 
@@ -130,11 +131,13 @@ public class AuthorController {
     )
     @PreAuthorize("hasAuthority('DELETE_AUTHOR')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAuthor(
+    public ResponseEntity<ApiSuccessResponse> deleteAuthor(
             @PathVariable Long id) {
 
         authorService.deleteAuthor(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiSuccessResponse("Author deleted successfully")
+        );
     }
-}
+    }

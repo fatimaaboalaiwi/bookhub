@@ -9,7 +9,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import java.util.Map;
 
 
 @RestController
@@ -35,5 +38,21 @@ public class UserController {
 
         return ResponseEntity.ok(authService.login(request));
     }
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getCurrentUser(
+            Authentication authentication) {
 
+        var authorities = authentication.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        Map<String, Object> response = Map.of(
+                "username", authentication.getName(),
+                "authorities", authorities
+        );
+
+        return ResponseEntity.ok(response);
+    }
 }

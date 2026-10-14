@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.company.bookhub.common.dto.ApiSuccessResponse;
 
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class UserRoleController {
     )
     @DeleteMapping("/{userId}/roles/{roleId}")
     @PreAuthorize("hasAuthority('REMOVE_USER_ROLE')")
-    public ResponseEntity<Void> removeRoleFromUser(
+    public ResponseEntity<ApiSuccessResponse> removeRoleFromUser(
             @PathVariable Long userId,
             @PathVariable Long roleId) {
 
@@ -55,7 +56,9 @@ public class UserRoleController {
                 roleId
         );
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(
+                new ApiSuccessResponse("Role removed from user successfully")
+        );
     }
 
     @Operation(
