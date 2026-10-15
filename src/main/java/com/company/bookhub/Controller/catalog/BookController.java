@@ -26,8 +26,8 @@ import com.company.bookhub.common.dto.ApiSuccessResponse;
 @RequestMapping(ApiPaths.BOOKS)
 @RequiredArgsConstructor
 @Tag(
-        name = "Catalog",
-        description = "APIs for managing books, authors and categories"
+        name = "Books",
+        description = "APIs for managing books and book purchases"
 )
 @SecurityRequirement(name = "bearerAuth")
 public class BookController {

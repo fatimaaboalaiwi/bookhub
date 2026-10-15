@@ -78,21 +78,11 @@ public class UserRoleServiceImpl implements UserRoleService {
                     "role.not_assigned"
             );
         }
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
-
-        String currentUsername = authentication.getName();
-
-//        if ("ADMIN".equals(role.getName())
-//                && user.getUsername().equals(currentUsername)) {
-//
-//            throw new IllegalStateException(
-//                    "Admin cannot remove ADMIN role from himself"
-//            );
-//        }
-
+        if (role.isSystemRole()) {
+            throw new ResourceNotFoundException(
+                    "delete.role.is.denied"
+            );
+        }
 
         user.getRoles().remove(role);
 
@@ -116,6 +106,4 @@ public class UserRoleServiceImpl implements UserRoleService {
                 .map(RoleResponse::from)
                 .toList();
     }
-
-//    #TODO assign permissions to role
 }

@@ -8,12 +8,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.company.bookhub.common.dto.ApiSuccessResponse;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
+@Tag(
+        name = "Users",
+        description = "APIs for managing application users"
+)
 public class UserManagementController {
 
     private final UserRepository userRepository;

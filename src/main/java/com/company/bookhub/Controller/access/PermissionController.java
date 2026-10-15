@@ -17,8 +17,8 @@ import java.util.List;
 @RequestMapping("/api/v1/permissions")
 @RequiredArgsConstructor
 @Tag(
-        name = "Access Management",
-        description = "APIs for managing users, roles and permissions"
+        name = "Permissions",
+        description = "APIs for managing application permissions"
 )
 
 public class PermissionController {

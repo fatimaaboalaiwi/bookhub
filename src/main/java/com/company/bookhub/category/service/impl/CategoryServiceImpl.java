@@ -64,6 +64,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .toList();
     }
 
+
     @Override
     public CategoryResponse update(Long id, CategoryRequest request) {
 
@@ -82,8 +83,11 @@ public class CategoryServiceImpl implements CategoryService {
             );
         }
 
+        // Update both fields from the request
         category.setName(request.name());
+        category.setDescription(request.description());
 
+        // Save the updated category
         Category updatedCategory = categoryRepository.save(category);
 
         return categoryMapper.toResponse(updatedCategory);

@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 public record RoleResponse(
         Long id,
         String name,
+        boolean systemPermission,
         Set<PermissionResponse> permissions
 ) {
 
@@ -22,6 +23,7 @@ public record RoleResponse(
         return new RoleResponse(
                 role.getId(),
                 role.getName(),
+                role.isSystemRole(),
                 rolePermissions
 
         );

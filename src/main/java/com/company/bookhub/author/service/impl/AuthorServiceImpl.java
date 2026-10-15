@@ -69,7 +69,7 @@ public class AuthorServiceImpl implements AuthorService {
                 .filter(existingAuthor -> !existingAuthor.getId().equals(id))
                 .isPresent()) {
 
-            throw new DuplicateResourceException("Author already exists");
+            throw new DuplicateResourceException("author.already_exists");
         }
 
         author.setName(request.getName());

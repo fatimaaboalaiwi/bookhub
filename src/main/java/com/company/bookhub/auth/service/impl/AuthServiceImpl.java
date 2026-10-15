@@ -15,12 +15,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.company.bookhub.common.exception.DuplicateResourceException;
 
 import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Tag(
+        name = "Authentication",
+        description = "APIs for registration, login and current-user information"
+)
 @Transactional
 public class AuthServiceImpl implements AuthService {
 

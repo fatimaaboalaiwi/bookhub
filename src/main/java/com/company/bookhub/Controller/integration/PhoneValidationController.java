@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/phone")
 @RequiredArgsConstructor
 @Tag(
-        name = "Integrations",
-        description = "APIs for external service integrations"
+        name = "Utilities",
+        description = "General-purpose validation utilities"
 )
 public class PhoneValidationController {
 

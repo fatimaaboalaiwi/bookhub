@@ -13,10 +13,14 @@ public class MessageService {
     private final MessageSource messageSource;
 
     public String getMessage(String key, Locale locale) {
-        return messageSource.getMessage(
-                key,
-                null,
-                locale
-        );
+        try {
+            return messageSource.getMessage(
+                    key,
+                    null,
+                    locale
+            );
+        } catch (Exception e) {
+            return key;
+        }
     }
 }

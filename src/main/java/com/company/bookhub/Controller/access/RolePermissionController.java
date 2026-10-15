@@ -18,8 +18,8 @@ import java.util.List;
 @RequestMapping("/api/v1/roles")
 @RequiredArgsConstructor
 @Tag(
-        name = "Access Management",
-        description = "APIs for managing users, roles and permissions"
+        name = "Roles",
+        description = "APIs for retrieving and managing role permissions"
 )
 public class RolePermissionController {
 

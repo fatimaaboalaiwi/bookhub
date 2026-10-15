@@ -23,8 +23,8 @@ import java.util.List;
 @RequestMapping(ApiPaths.AUTHORS)
 @RequiredArgsConstructor
 @Tag(
-        name = "Catalog",
-        description = "APIs for managing books, authors and categories"
+        name = "Authors",
+        description = "APIs for managing authors"
 )
 @SecurityRequirement(name = "bearerAuth")
 public class AuthorController {
@@ -129,7 +129,7 @@ public class AuthorController {
             summary = "Delete an author",
             description = "Deletes an author. Requires ADMIN role."
     )
-    @PreAuthorize("hasAuthority('DELETE_AUTHOR')")
+    @PreAuthorize("hasAuthority('AUTHOR_DELETE')")
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiSuccessResponse> deleteAuthor(
             @PathVariable Long id) {

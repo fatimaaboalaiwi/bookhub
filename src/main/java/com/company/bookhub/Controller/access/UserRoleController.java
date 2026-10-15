@@ -16,8 +16,8 @@ import java.util.List;
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 @Tag(
-        name = "Access Management",
-        description = "APIs for managing users, roles and permissions"
+        name = "Users",
+        description = "APIs for managing user role assignments"
 )
 public class UserRoleController {
 

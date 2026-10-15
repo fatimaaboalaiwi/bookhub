@@ -23,8 +23,8 @@ import java.util.List;
 @RequestMapping(ApiPaths.CATEGORIES)
 @RequiredArgsConstructor
 @Tag(
-        name = "Catalog",
-        description = "APIs for managing books, authors and categories"
+        name = "Category",
+        description = "APIs for managing book categories"
 )
 @SecurityRequirement(name = "bearerAuth")
 public class CategoryController {
