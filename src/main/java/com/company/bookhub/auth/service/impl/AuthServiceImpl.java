@@ -45,6 +45,7 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
+        //make USER as a configuration property in application.yml file.
         Role userRole = roleRepository.findByName("USER")
                 .orElseThrow(() ->
                         new RuntimeException("USER role not found")
