@@ -24,9 +24,7 @@ public class RolePermissionServiceImpl implements RolePermissionService {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
 
-    //#TODO
-//    delete assignPermissionToRole and removePermissionFromRole
-//            create 1 funtion : manageRolePermissions: btekhod roleId, List of PermissionsId
+
 
     @Override
     public void manageRolePermissions(Long roleId, List<Long> permissionIds) {

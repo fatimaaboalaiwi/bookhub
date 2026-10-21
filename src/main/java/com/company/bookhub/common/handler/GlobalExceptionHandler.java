@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.company.bookhub.common.exception.NumverifyException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Locale;
@@ -164,6 +165,33 @@ public class GlobalExceptionHandler {
                 HttpStatus.UNAUTHORIZED
         );
     }
+
+    // =========================================
+    // RESPONSE STATUS EXCEPTION
+    // =========================================
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleResponseStatusException(
+            ResponseStatusException ex,
+            Locale locale) {
+
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+
+        String message = ex.getReason();
+
+        if (message == null || message.isBlank()) {
+            message = messageService.getMessage("unexpected.error", locale);
+        }
+
+        ErrorResponse error = new ErrorResponse(
+                status.value(),
+                message,
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(error, status);
+    }
+
 
 
     // =========================================

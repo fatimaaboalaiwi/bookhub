@@ -11,6 +11,7 @@ import com.company.bookhub.user.service.UserRoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -55,40 +56,56 @@ public class UserRoleServiceImpl implements UserRoleService {
     }
 
     @Override
-    public void removeRoleFromUser(
-            Long userId,
-            Long roleId) {
+    public void removeRoleFromUser(Long userId, Long roleId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "user.not_found"
-                        )
+                        new ResourceNotFoundException("user.not_found")
                 );
 
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "role.not_found"
-                        )
+                        new ResourceNotFoundException("role.not_found")
                 );
 
         if (!user.getRoles().contains(role)) {
-            throw new ResourceNotFoundException(
-                    "role.not_assigned"
+            throw new ResourceNotFoundException("role.not_assigned");
+        }
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        boolean isAdminRole =
+                "ADMIN".equalsIgnoreCase(role.getName());
+        if (isAdminRole && user.isSystemUser()) {
+            throw new AccessDeniedException(
+                    "The ADMIN role cannot be removed from a system user."
             );
         }
-        if (role.isSystemRole()) {
-            throw new ResourceNotFoundException(
-                    "delete.role.is.denied"
+
+        boolean isRemovingOwnRole =
+                authentication != null
+                        && authentication.getName()
+                        .equalsIgnoreCase(user.getUsername());
+
+        // Prevent an administrator from removing their own ADMIN role.
+        if (isAdminRole && isRemovingOwnRole) {
+            throw new AccessDeniedException(
+                    "You cannot remove your own ADMIN role."
+            );
+        }
+
+        // Prevent removal of the last administrator's ADMIN role.
+        if (isAdminRole
+                && userRepository.countByRoles_Id(roleId) <= 1) {
+            throw new AccessDeniedException(
+                    "The last administrator cannot lose the ADMIN role."
             );
         }
 
         user.getRoles().remove(role);
-
         userRepository.save(user);
     }
-
     @Override
     @Transactional(readOnly = true)
     public List<RoleResponse> getUserRoles(

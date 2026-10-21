@@ -12,12 +12,17 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Map;
 
 
 @RestController
 @RequestMapping(ApiPaths.AUTH)
 @RequiredArgsConstructor
+@Tag(
+        name = "Users",
+        description = "APIs for user management and authentication"
+)
 public class UserController {
 
     private final AuthService authService;
