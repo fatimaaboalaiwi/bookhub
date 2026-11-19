@@ -1,3 +1,4 @@
+
 package com.company.bookhub.book.service;
 
 import com.company.bookhub.author.entity.Author;
@@ -13,7 +14,9 @@ import com.company.bookhub.category.repository.CategoryRepository;
 import com.company.bookhub.common.dto.PageResponse;
 import com.company.bookhub.common.exception.DuplicateResourceException;
 import com.company.bookhub.common.exception.ResourceNotFoundException;
+import com.company.bookhub.ai.event.BookChangedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,59 +32,46 @@ public class BookServiceImpl implements BookService {
     private final AuthorRepository authorRepository;
     private final CategoryRepository categoryRepository;
     private final BookMapper bookMapper;
-
-
-    // =========================
-    // CREATE
-    // =========================
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public BookResponse create(BookRequest request) {
 
-        // Check duplicate ISBN
         if (bookRepository.existsByIsbn(request.isbn())) {
-            throw new DuplicateResourceException(
-                    "book.isbn_exists"
-            );
+            throw new DuplicateResourceException("book.isbn_exists");
         }
 
-        // Find author
         Author author = authorRepository.findById(request.authorId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "author.not_found"
-                        )
+                        new ResourceNotFoundException("author.not_found")
                 );
 
-        // Find category
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "category.not_found"
-                        )
+                        new ResourceNotFoundException("category.not_found")
                 );
 
-        // Create entity
         Book book = new Book();
 
         book.setTitle(request.title());
         book.setIsbn(request.isbn());
         book.setPublishedYear(request.publishedYear());
         book.setPrice(request.price());
+        book.setQty(request.qty() == null ? 1 : request.qty());
         book.setAuthor(author);
         book.setCategory(category);
 
-        // Save
         Book savedBook = bookRepository.save(book);
 
-        // Convert entity → DTO
+        eventPublisher.publishEvent(
+                new BookChangedEvent(
+                        savedBook.getId(),
+                        BookChangedEvent.Operation.UPSERT
+                )
+        );
+
         return bookMapper.toResponse(savedBook);
     }
-
-
-    // =========================
-    // GET BY ID
-    // =========================
 
     @Override
     @Transactional(readOnly = true)
@@ -89,19 +79,11 @@ public class BookServiceImpl implements BookService {
 
         Book book = bookRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "book.not_found"
-                        )
+                        new ResourceNotFoundException("book.not_found")
                 );
 
         return bookMapper.toResponse(book);
     }
-
-
-    // =========================
-    // GET ALL
-    // PAGINATION + FILTERING
-    // =========================
 
     @Override
     @Transactional(readOnly = true)
@@ -122,12 +104,10 @@ public class BookServiceImpl implements BookService {
                 bookRepository.findAll(specification, pageable);
 
         return new PageResponse<>(
-                bookPage
-                        .getContent()
+                bookPage.getContent()
                         .stream()
                         .map(bookMapper::toResponse)
                         .toList(),
-
                 bookPage.getNumber(),
                 bookPage.getSize(),
                 bookPage.getTotalElements(),
@@ -137,83 +117,67 @@ public class BookServiceImpl implements BookService {
         );
     }
 
-
-    // =========================
-    // UPDATE
-    // =========================
-
     @Override
-    public BookResponse update(
-            Long id,
-            BookRequest request) {
+    public BookResponse update(Long id, BookRequest request) {
 
-        // Find existing book
         Book book = bookRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "book.not_found"
-                        )
+                        new ResourceNotFoundException("book.not_found")
                 );
 
-        // Check duplicate ISBN
         if (!book.getIsbn().equals(request.isbn())
                 && bookRepository.existsByIsbn(request.isbn())) {
 
-            throw new DuplicateResourceException(
-                    "book.isbn_exists"
-            );
+            throw new DuplicateResourceException("book.isbn_exists");
         }
 
-        // Find author
         Author author = authorRepository.findById(request.authorId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "author.not_found"
-                        )
+                        new ResourceNotFoundException("author.not_found")
                 );
 
-        // Find category
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "category.not_found"
-                        )
+                        new ResourceNotFoundException("category.not_found")
                 );
 
-        // Update managed entity
         book.setTitle(request.title());
         book.setIsbn(request.isbn());
         book.setPublishedYear(request.publishedYear());
         book.setPrice(request.price());
+
+        if (request.qty() != null) {
+            book.setQty(request.qty());
+        }
+
         book.setAuthor(author);
         book.setCategory(category);
 
-        /*
-         * Because this method is transactional,
-         * Hibernate can detect these changes through
-         * dirty checking.
-         *
-         * save() is not strictly necessary here.
-         */
+        eventPublisher.publishEvent(
+                new BookChangedEvent(
+                        book.getId(),
+                        BookChangedEvent.Operation.UPSERT
+                )
+        );
 
         return bookMapper.toResponse(book);
     }
-
-
-    // =========================
-    // DELETE
-    // =========================
 
     @Override
     public void delete(Long id) {
 
         Book book = bookRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "book.not_found"
-                        )
+                        new ResourceNotFoundException("book.not_found")
                 );
 
         bookRepository.delete(book);
+
+        eventPublisher.publishEvent(
+                new BookChangedEvent(
+                        id,
+                        BookChangedEvent.Operation.DELETE
+                )
+        );
     }
 }

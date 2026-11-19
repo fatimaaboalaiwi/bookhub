@@ -1,3 +1,4 @@
+
 package com.company.bookhub.book.entity;
 
 import com.company.bookhub.author.entity.Author;
@@ -31,6 +32,9 @@ public class Book {
 
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @Column(name = "qty", nullable = false)
+    private Integer qty = 1;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "author_id", nullable = false)

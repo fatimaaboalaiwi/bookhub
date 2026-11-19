@@ -1,5 +1,7 @@
+
 server:
   port: 8001
+  address: 127.0.0.1
 
 spring:
   application:
@@ -24,6 +26,47 @@ spring:
     baseline-on-migrate: true
     validate-on-migrate: true
 
+    # Spring AI
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: qwen3.5:0.8b
+        think: false
+        num-predict: 256
+        temperature: 0.3
+      embedding:
+        model: nomic-embed-text
+
+    model:
+      chat: ollama
+      embedding: ollama
+      audio:
+        speech: none
+        transcription: none
+
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 768
+        initialize-schema: true
+
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: never
+
+    # Spring AI MCP Server
+    mcp:
+      server:
+        protocol: STREAMABLE
+        name: bookhub-mcp-server
+        version: 1.0.0
+        type: SYNC
+        instructions: "BookHub MCP server provides tools for searching books and retrieving verified catalog information."
+
 logging:
   level:
     org.hibernate.SQL: DEBUG
@@ -32,8 +75,8 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
 
-  numverify:
-    api-key: ${NUMVERIFY_API_KEY}
+numverify:
+  api-key: ${NUMVERIFY_API_KEY}
 
 accounting:
   base-url: http://localhost:8002

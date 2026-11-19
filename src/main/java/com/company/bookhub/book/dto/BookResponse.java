@@ -9,6 +9,7 @@ public record BookResponse(
         String isbn,
         Integer publishedYear,
         BigDecimal price,
+        Integer qty,
         Long authorId,
         Long categoryId,
         String authorName,
