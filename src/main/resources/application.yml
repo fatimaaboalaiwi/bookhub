@@ -1,11 +1,13 @@
 
-server:
-  port: 8001
-  address: 127.0.0.1
-
 spring:
   application:
     name: bookhub
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USERNAME:bookhub}
+    password: ${RABBITMQ_PASSWORD:BookHubRabbit2026!}
 
   datasource:
     url: jdbc:postgresql://localhost:5432/bookhub
@@ -70,6 +72,8 @@ spring:
 logging:
   level:
     org.hibernate.SQL: DEBUG
+    org.springframework.amqp: DEBUG
+    org.springframework.boot.autoconfigure.amqp: DEBUG
 
 jwt:
   secret: ${JWT_SECRET}

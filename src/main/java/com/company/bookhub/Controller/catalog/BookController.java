@@ -3,10 +3,14 @@ package com.company.bookhub.Controller.catalog;
 
 import com.company.bookhub.book.dto.BookRequest;
 import com.company.bookhub.book.dto.BookResponse;
+import com.company.bookhub.book.dto.BulkBookRequest;
 import com.company.bookhub.book.dto.PurchaseResponse;
+import com.company.bookhub.book.messaging.BulkBookProducer;
+import com.company.bookhub.book.messaging.dto.BulkBookMessage;
 import com.company.bookhub.book.service.BookService;
 import com.company.bookhub.book.service.PurchaseService;
 import com.company.bookhub.common.constant.ApiPaths;
+import com.company.bookhub.common.dto.ApiSuccessResponse;
 import com.company.bookhub.common.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,7 +24,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.company.bookhub.common.dto.ApiSuccessResponse;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping(ApiPaths.BOOKS)
@@ -34,6 +39,7 @@ public class BookController {
 
     private final BookService bookService;
     private final PurchaseService purchaseService;
+    private final BulkBookProducer bulkBookProducer;
 
     // =========================
     // CREATE
@@ -59,6 +65,36 @@ public class BookController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    // =========================
+    // BULK CREATE
+    // =========================
+
+    @Operation(
+            summary = "Submit books in bulk",
+            description = "Publishes a batch of books to RabbitMQ for asynchronous processing. Requires BOOK_CREATE permission."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "202", description = "Book batch accepted for processing"),
+            @ApiResponse(responseCode = "400", description = "Validation failed"),
+            @ApiResponse(responseCode = "403", description = "Missing BOOK_CREATE permission")
+    })
+    @PreAuthorize("hasAuthority('BOOK_CREATE')")
+    @PostMapping("/bulk")
+    public ResponseEntity<Map<String, Object>> createBulk(
+            @Valid @RequestBody BulkBookRequest request) {
+
+        BulkBookMessage message =
+                bulkBookProducer.publishBooks(request.books());
+
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(Map.of(
+                        "message", "Book batch accepted for processing",
+                        "batchId", message.batchId(),
+                        "numberOfBooks", message.books().size()
+                ));
     }
 
     // =========================
@@ -171,26 +207,11 @@ public class BookController {
             description = "Purchases a book using the authenticated user's account balance."
     )
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Book purchased successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Authentication required"
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Missing BOOK_PURCHASE permission"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Book, user or account not found"
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Insufficient balance"
-            )
+            @ApiResponse(responseCode = "200", description = "Book purchased successfully"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Missing BOOK_PURCHASE permission"),
+            @ApiResponse(responseCode = "404", description = "Book, user or account not found"),
+            @ApiResponse(responseCode = "400", description = "Insufficient balance")
     })
     @PostMapping("/{bookId}/purchase")
     @PreAuthorize("hasAuthority('BOOK_PURCHASE')")
