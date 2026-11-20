@@ -1,0 +1,563 @@
+
+package com.company.bookhub.ai.service;
+
+import com.company.bookhub.ai.dto.AiChatResponse;
+import com.company.bookhub.ai.dto.BookResearchResult;
+import com.company.bookhub.book.entity.Book;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+public class AiChatService {
+
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+    private final BookCatalogService bookCatalogService;
+    private final BookCatalogTools bookCatalogTools;
+    private final BookResearchAgent bookResearchAgent;
+
+    public AiChatService(
+            ChatClient.Builder chatClientBuilder,
+            ChatMemory chatMemory,
+            VectorStore vectorStore,
+            BookCatalogService bookCatalogService,
+            BookCatalogTools bookCatalogTools,
+            BookResearchAgent bookResearchAgent
+    ) {
+
+        this.vectorStore = vectorStore;
+        this.bookCatalogService = bookCatalogService;
+        this.bookCatalogTools = bookCatalogTools;
+        this.bookResearchAgent = bookResearchAgent;
+
+        this.chatClient = chatClientBuilder
+                .defaultSystem("""
+                        You are BookHub AI Assistant.
+
+                        Your responsibilities include:
+                        - Helping users discover books available in BookHub.
+                        - Answering questions about authors and literature.
+                        - Providing reading recommendations.
+                        - Answering general educational questions.
+
+                        Communication style:
+                        - Be friendly, clear, and concise.
+                        - Organize answers using short lists when useful.
+                        - Ask for clarification when a question is ambiguous.
+
+                        STRICT RULES FOR BOOKHUB DATABASE INFORMATION:
+
+                        1. Use supplied BookHub context as the source of
+                           truth for actual books, authors, and categories.
+
+                        2. Never invent book titles, ISBNs, author names,
+                           biographies, publication years, prices,
+                           categories, or descriptions.
+
+                        3. Only state an author biography if it is explicitly
+                           available in the supplied context.
+
+                        4. CATEGORY-BASED RELEVANCE:
+                           - A category name and its description are valid
+                             evidence for identifying books that may be
+                             relevant to a user's requested subject.
+                           - If a category description directly matches
+                             the requested subject, you may recommend
+                             books belonging to that category.
+                           - Do not reject a book merely because its title
+                             does not contain the requested keywords.
+                           - Clearly explain when a recommendation is
+                             based on category-level relevance.
+
+                        5. BOOK CONTENT ACCURACY:
+                           - A category description describes the category,
+                             not necessarily the contents of every book
+                             assigned to that category.
+                           - Never claim that a specific book covers a
+                             particular programming language, technology,
+                             topic, plot, or subject unless the supplied
+                             context explicitly confirms it.
+                           - Do not invent a book plot, summary, or contents.
+                           - When detailed book contents are unavailable,
+                             clearly say that they cannot be verified.
+
+                        6. If supplied context does not contain enough
+                           information, clearly explain this limitation.
+
+                        7. Do not claim that a partial search represents
+                           the complete BookHub catalog.
+
+                        8. Recommend only books present in supplied
+                           BookHub context.
+
+                        GENERAL EDUCATIONAL QUESTIONS:
+
+                        - You may answer using your general knowledge.
+                        - Distinguish general explanations from facts
+                          about BookHub's actual inventory.
+                        - Do not make unsupported assumptions.
+
+                        IMPORTANT:
+                        - Never claim to have added, updated, deleted,
+                          or purchased anything in BookHub.
+                        - Never claim to have accessed information that
+                          was not supplied in the context.
+                        """)
+                .defaultAdvisors(
+                        MessageChatMemoryAdvisor.builder(chatMemory).build()
+                )
+                .build();
+    }
+
+    public AiChatResponse chat(
+            String message,
+            String conversationId,
+            String username
+    ) {
+
+        String scopedConversationId = UUID.nameUUIDFromBytes(
+                (username + ":" + conversationId)
+                        .getBytes(StandardCharsets.UTF_8)
+        ).toString();
+
+        // 1. Get the exact book count directly from PostgreSQL.
+        if (isCountQuestion(message)) {
+            return new AiChatResponse(
+                    bookCatalogService.getBookCountAnswer()
+            );
+        }
+
+        // 2. Get the complete catalog directly from PostgreSQL.
+        if (isCatalogQuestion(message)) {
+            return new AiChatResponse(
+                    bookCatalogService.getCompleteCatalogAnswer()
+            );
+        }
+
+        // 3. Get exact book facts directly from PostgreSQL.
+        if (isExactBookFactQuestion(message)) {
+
+            Optional<String> bookTitle =
+                    bookCatalogService.findBookTitleInQuestion(message);
+
+            if (bookTitle.isPresent()) {
+                return new AiChatResponse(
+                        bookCatalogService.getExactBookAnswer(
+                                bookTitle.get()
+                        )
+                );
+            }
+        }
+
+        // 4. Use the research agent for subject-based book searches.
+        if (isSubjectResearchQuestion(message)) {
+            return answerWithResearchAgent(
+                    message,
+                    scopedConversationId
+            );
+        }
+
+        // 5. Hybrid retrieval: semantic search + keyword search.
+
+        Map<Long, HybridCandidate> candidates = new HashMap<>();
+
+        // 5a. Retrieve semantic matches from PGVector.
+        List<Document> semanticDocuments =
+                vectorStore.similaritySearch(
+                        SearchRequest.builder()
+                                .query(message)
+                                .topK(4)
+                                .similarityThresholdAll()
+                                .build()
+                );
+
+        for (int i = 0; i < semanticDocuments.size(); i++) {
+
+            Document document = semanticDocuments.get(i);
+
+            Long bookId = extractBookId(document);
+
+            if (bookId != null) {
+
+                double score = 1.0 / (60 + i + 1);
+
+                addCandidate(
+                        candidates,
+                        bookId,
+                        document,
+                        score,
+                        false
+                );
+            }
+        }
+
+        // 5b. Retrieve keyword matches from PostgreSQL.
+        List<Book> keywordBooks =
+                bookCatalogService.searchBooksByKeywords(message);
+
+        for (int i = 0; i < keywordBooks.size(); i++) {
+
+            Book book = keywordBooks.get(i);
+
+            Document document = buildKeywordDocument(book);
+
+            double score = 1.0 / (60 + i + 1);
+
+            addCandidate(
+                    candidates,
+                    book.getId(),
+                    document,
+                    score,
+                    true
+            );
+        }
+
+        // 5c. Merge, deduplicate, and rank using Reciprocal Rank Fusion.
+        String context = candidates.values()
+                .stream()
+                .sorted(
+                        Comparator.comparingDouble(
+                                HybridCandidate::score
+                        ).reversed()
+                )
+                .limit(4)
+                .map(candidate -> candidate.document().getText())
+                .collect(Collectors.joining("\n\n---\n\n"));
+
+        if (context.isBlank()) {
+            context = "No relevant BookHub records were retrieved.";
+        }
+
+        // 6. Generate the final answer using the combined context.
+        String userPrompt = """
+                Answer the user's question using the system instructions.
+
+                BOOKHUB DATABASE CONTEXT:
+                The following records were retrieved using a combination
+                of semantic vector search and PostgreSQL keyword search.
+
+                IMPORTANT INTERPRETATION GUIDANCE:
+
+                - Examine category names and category descriptions when
+                  deciding whether a book may be relevant to the user's
+                  requested subject.
+                - A category description can establish category-level
+                  relevance even when the book title does not contain
+                  the requested keywords.
+                - Do not reject a book just because its title is different
+                  from the requested subject.
+                - Explain the basis of the match accurately.
+                - Do not present category-level relevance as proof of
+                  the individual book's actual contents.
+                - If the record does not provide a book summary or
+                  detailed contents, explicitly state that limitation.
+                - Recommend only books included in the retrieved records.
+
+                %s
+
+                USER QUESTION:
+
+                %s
+
+                Remember:
+                - Use only supplied context for specific BookHub facts.
+                - Do not make unsupported assumptions.
+                - If the context is insufficient, say so.
+                - General educational questions may be answered
+                  using general knowledge.
+                """.formatted(context, message);
+
+        String response = chatClient
+                .prompt()
+                .user(userPrompt)
+                .tools(bookCatalogTools)
+                .advisors(advisor -> advisor.param(
+                        ChatMemory.CONVERSATION_ID,
+                        scopedConversationId
+                ))
+                .call()
+                .content();
+
+        return new AiChatResponse(response);
+    }
+
+    // Determines whether the user is asking for books about a subject.
+    private boolean isSubjectResearchQuestion(String message) {
+
+        String normalized = normalize(message);
+
+        boolean mentionsBooks = normalized.matches(
+                ".*\\b(books?|titles?)\\b.*"
+        );
+
+        boolean hasSubjectIntent = normalized.matches(
+                ".*\\b(about|on|related to|regarding|concerning|covering|for|in|recommend|recommendation|suggest|find|looking for)\\b.*"
+        );
+
+        return mentionsBooks
+                && hasSubjectIntent
+                && !isExactBookFactQuestion(message);
+    }
+
+    // Formats the research agent's verified database results directly.
+    // No LLM is used here, preventing invented book titles or facts.
+    private AiChatResponse answerWithResearchAgent(
+            String message,
+            String scopedConversationId
+    ) {
+
+        List<BookResearchResult> results =
+                bookResearchAgent.researchBySubject(message);
+
+        if (results.isEmpty()) {
+            return new AiChatResponse(
+                    "I couldn't find any books matching that subject " +
+                            "in the current BookHub catalog."
+            );
+        }
+
+        StringBuilder answer = new StringBuilder();
+
+        answer.append(
+                "I found the following potentially relevant books " +
+                        "in the BookHub catalog:\n\n"
+        );
+
+        for (int i = 0; i < results.size(); i++) {
+
+            BookResearchResult book = results.get(i);
+
+            answer.append(i + 1)
+                    .append(". **")
+                    .append(book.title() == null
+                            ? "Title not available"
+                            : book.title())
+                    .append("**\n");
+
+            answer.append("   - Author: ")
+                    .append(book.authorName() == null
+                            ? "Not available"
+                            : book.authorName())
+                    .append("\n");
+
+            answer.append("   - ISBN: ")
+                    .append(book.isbn() == null
+                            ? "Not available"
+                            : book.isbn())
+                    .append("\n");
+
+            answer.append("   - Publication year: ")
+                    .append(book.publishedYear() == null
+                            ? "Not available"
+                            : book.publishedYear())
+                    .append("\n");
+
+            answer.append("   - Price: ")
+                    .append(book.price() == null
+                            ? "Not available"
+                            : book.price())
+                    .append("\n");
+
+            answer.append("   - Category: ")
+                    .append(book.categoryName() == null
+                            ? "Not available"
+                            : book.categoryName())
+                    .append("\n");
+
+            answer.append("   - Category description: ")
+                    .append(book.categoryDescription() == null
+                            ? "Not available"
+                            : book.categoryDescription())
+                    .append("\n\n");
+        }
+
+        answer.append(
+                "Relevance note: These books were identified using " +
+                        "their category names and descriptions. This establishes " +
+                        "potential category-level relevance, but does not verify " +
+                        "the actual contents of each individual book. " +
+                        "BookHub does not currently provide verified book summaries."
+        );
+
+        return new AiChatResponse(answer.toString());
+    }
+
+    // Adds a candidate or combines its ranking score if already retrieved.
+    // Keyword documents are preferred when the same book appears in both
+    // searches because they are built directly from the current DB record.
+    private void addCandidate(
+            Map<Long, HybridCandidate> candidates,
+            Long bookId,
+            Document document,
+            double score,
+            boolean preferIncomingDocument
+    ) {
+
+        candidates.merge(
+                bookId,
+                new HybridCandidate(document, score),
+                (existing, incoming) ->
+                        new HybridCandidate(
+                                preferIncomingDocument
+                                        ? incoming.document()
+                                        : existing.document(),
+                                existing.score() + incoming.score()
+                        )
+        );
+    }
+
+    // Extracts the actual database book ID from document metadata.
+    private Long extractBookId(Document document) {
+
+        Object value = document.getMetadata().get("bookId");
+
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+
+        if (value != null) {
+            try {
+                return Long.parseLong(value.toString());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    // Creates a document for a keyword result using verified database fields.
+    private Document buildKeywordDocument(Book book) {
+
+        String authorName = book.getAuthor().getName();
+        String categoryName = book.getCategory().getName();
+
+        String biography = book.getAuthor().getBiography();
+        String categoryDescription = book.getCategory().getDescription();
+
+        String content = """
+                BOOKHUB CATALOG RECORD
+
+                VERIFIED BOOK INFORMATION:
+                Book Title: %s
+                ISBN: %s
+                Publication Year: %s
+                Price: %s
+                Category: %s
+
+                AUTHOR INFORMATION (NOT A BOOK DESCRIPTION):
+                Author Name: %s
+                Author Biography: %s
+
+                CATEGORY INFORMATION:
+                Category Name: %s
+                Category Description: %s
+
+                IMPORTANT:
+                - The category description describes the category.
+                - The category description may be used to identify
+                  category-level relevance to a user's requested subject.
+                - Category-level relevance does not prove the actual
+                  contents of this individual book.
+                - The author biography describes the author,
+                  not the book's plot or contents.
+                - No book plot, summary, or detailed contents
+                  are provided in this record.
+                """.formatted(
+                book.getTitle(),
+                book.getIsbn(),
+                book.getPublishedYear() == null
+                        ? "Not specified"
+                        : book.getPublishedYear(),
+                book.getPrice(),
+                categoryName,
+                authorName,
+                biography == null ? "Not available" : biography,
+                categoryName,
+                categoryDescription == null
+                        ? "Not available"
+                        : categoryDescription
+        );
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("bookId", book.getId());
+        metadata.put("title", book.getTitle());
+        metadata.put("author", authorName);
+        metadata.put("category", categoryName);
+
+        return new Document(
+                "keyword-book-" + book.getId(),
+                content,
+                metadata
+        );
+    }
+
+    // A candidate contains its document and combined RRF score.
+    private record HybridCandidate(
+            Document document,
+            double score
+    ) {
+    }
+
+    private boolean isCategoryRecommendationQuestion(String message) {
+
+        String normalized = normalize(message);
+
+        return normalized.matches(
+                ".*\\b(recommend|recommendation|suggest|show|list|find|available|books?)\\b.*"
+        );
+    }
+
+    private boolean isExactBookFactQuestion(String message) {
+
+        String normalized = normalize(message);
+
+        return normalized.matches(
+                ".*\\b(author|wrote|written by|isbn|price|cost|year|published|publication|category|details)\\b.*"
+        );
+    }
+
+    private boolean isCatalogQuestion(String message) {
+
+        String normalized = normalize(message);
+
+        return normalized.matches(
+                ".*\\b(all|every|list|show|display)\\b.*" +
+                        ".*\\b(books|book|catalog|inventory)\\b.*"
+        );
+    }
+
+    private boolean isCountQuestion(String message) {
+
+        String normalized = normalize(message);
+
+        return normalized.matches(
+                ".*\\b(how many|count|number of)\\b.*" +
+                        ".*\\b(books|book)\\b.*"
+        );
+    }
+
+    private String normalize(String message) {
+
+        return message
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+}

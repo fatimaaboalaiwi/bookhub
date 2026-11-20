@@ -1,0 +1,166 @@
+
+package com.company.bookhub.ai.service;
+
+import com.company.bookhub.ai.dto.AiChatResponse;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.stereotype.Service;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+public class AiChatService {
+
+    private final ChatClient chatClient;
+    private final VectorStore vectorStore;
+
+    public AiChatService(
+            ChatClient.Builder chatClientBuilder,
+            ChatMemory chatMemory,
+            VectorStore vectorStore
+    ) {
+
+        this.vectorStore = vectorStore;
+
+        this.chatClient = chatClientBuilder
+                .defaultSystem("""
+                        You are BookHub AI Assistant.
+
+                        Your responsibilities include:
+                        - Helping users discover books available in BookHub.
+                        - Answering questions about authors and literature.
+                        - Providing reading recommendations.
+                        - Answering general educational questions.
+
+                        Communication style:
+                        - Be friendly, clear, and concise.
+                        - Organize answers using short lists when useful.
+                        - Ask for clarification when a question is ambiguous.
+
+                        STRICT RULES FOR BOOKHUB DATABASE INFORMATION:
+
+                        1. Use retrieved BookHub context as the source of truth
+                           for actual books, authors, and categories.
+
+                        2. Never invent or guess:
+                           - Book titles or ISBNs.
+                           - Author names or biographies.
+                           - Publication years or prices.
+                           - Book categories or descriptions.
+
+                        3. Only state an author biography if it is explicitly
+                           available in the retrieved context.
+
+                        4. Never infer a book's genre, subject, or contents
+                           from its category name alone.
+                           For example, a Technology category does not prove
+                           that a book is nonfiction.
+
+                        5. If the retrieved context does not contain enough
+                           information to answer a catalog question, clearly
+                           explain that the information was not found in the
+                           retrieved BookHub records.
+
+                        6. Semantic retrieval may return only some relevant
+                           records. Never claim that the retrieved results
+                           represent the complete BookHub catalog unless
+                           completeness is explicitly established.
+
+                        7. When recommending BookHub books, recommend only
+                           books present in the retrieved context.
+                           Do not invent titles or authors.
+
+                        GENERAL EDUCATIONAL QUESTIONS:
+
+                        - You may answer general educational questions using
+                          your general knowledge.
+                        - Clearly distinguish general explanations from
+                          facts about BookHub's actual inventory.
+                        - Do not assume that a BookHub category establishes
+                          the subject or genre of a particular book.
+
+                        IMPORTANT:
+                        - Never claim to have added, updated, deleted, or
+                          purchased anything in BookHub.
+                        - Do not claim to have accessed information that was
+                          not provided in the retrieved context.
+                        """)
+                .defaultAdvisors(
+                        MessageChatMemoryAdvisor.builder(chatMemory).build()
+                )
+                .build();
+    }
+
+    public AiChatResponse chat(
+            String message,
+            String conversationId,
+            String username
+    ) {
+
+        String scopedConversationId = UUID.nameUUIDFromBytes(
+                (username + ":" + conversationId)
+                        .getBytes(StandardCharsets.UTF_8)
+        ).toString();
+
+        // Step 1: Retrieve relevant BookHub records.
+        List<Document> relevantDocuments = vectorStore.similaritySearch(
+                SearchRequest.builder()
+                        .query(message)
+                        .topK(4)
+                        .similarityThresholdAll()
+                        .build()
+        );
+
+        // Step 2: Combine retrieved records into context.
+        String context = relevantDocuments.stream()
+                .map(Document::getText)
+                .collect(Collectors.joining("\n\n---\n\n"));
+
+        // Step 3: Build a prompt containing the retrieved context.
+        String userPrompt = """
+                Answer the user's question using the instructions
+                provided by the system.
+
+                BOOKHUB DATABASE CONTEXT:
+
+                %s
+
+                USER QUESTION:
+
+                %s
+
+                Remember:
+                - Use only the supplied context for specific BookHub
+                  catalog facts.
+                - Do not make unsupported assumptions.
+                - If the context is insufficient, say so.
+                - General educational questions may still be answered
+                  using general knowledge.
+                """.formatted(
+                context.isBlank()
+                        ? "No relevant BookHub records were retrieved."
+                        : context,
+                message
+        );
+
+        // Step 4: Generate the answer while preserving chat memory.
+        String response = chatClient
+                .prompt()
+                .user(userPrompt)
+                .advisors(advisor -> advisor.param(
+                        ChatMemory.CONVERSATION_ID,
+                        scopedConversationId
+                ))
+                .call()
+                .content();
+
+        return new AiChatResponse(response);
+    }
+}

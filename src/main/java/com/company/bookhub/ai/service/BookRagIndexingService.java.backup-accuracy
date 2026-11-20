@@ -1,0 +1,83 @@
+
+package com.company.bookhub.ai.service;
+
+import com.company.bookhub.book.entity.Book;
+import com.company.bookhub.book.repository.BookRepository;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class BookRagIndexingService {
+
+    private final BookRepository bookRepository;
+    private final VectorStore vectorStore;
+
+    public BookRagIndexingService(
+            BookRepository bookRepository,
+            VectorStore vectorStore
+    ) {
+        this.bookRepository = bookRepository;
+        this.vectorStore = vectorStore;
+    }
+
+    @Transactional(readOnly = true)
+    public int indexBooks() {
+
+        List<Book> books = bookRepository.findAllForRag();
+
+        List<Document> documents = new ArrayList<>();
+
+        for (Book book : books) {
+
+            String authorName = book.getAuthor().getName();
+            String categoryName = book.getCategory().getName();
+
+            String biography = book.getAuthor().getBiography();
+
+            String content = """
+                    Book Title: %s
+                    ISBN: %s
+                    Publication Year: %s
+                    Price: %s
+                    Author: %s
+                    Author Biography: %s
+                    Category: %s
+                    Category Description: %s
+                    """.formatted(
+                    book.getTitle(),
+                    book.getIsbn(),
+                    book.getPublishedYear() == null
+                            ? "Not specified"
+                            : book.getPublishedYear(),
+                    book.getPrice(),
+                    authorName,
+                    biography == null ? "Not available" : biography,
+                    categoryName,
+                    book.getCategory().getDescription() == null
+                            ? "Not available"
+                            : book.getCategory().getDescription()
+            );
+
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("bookId", book.getId());
+            metadata.put("title", book.getTitle());
+            metadata.put("author", authorName);
+            metadata.put("category", categoryName);
+
+            documents.add(new Document(content, metadata));
+        }
+
+        if (!documents.isEmpty()) {
+            vectorStore.add(documents);
+        }
+
+        return documents.size();
+    }
+}

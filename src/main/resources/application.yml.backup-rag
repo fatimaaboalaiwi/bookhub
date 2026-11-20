@@ -1,0 +1,60 @@
+server:
+  port: 8001
+
+spring:
+  application:
+    name: bookhub
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bookhub
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  # Spring AI - Ollama Configuration
+
+
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+
+      chat:
+        model: qwen3.5:0.8b
+        think: false
+        num-predict: 256
+        temperature: 0.3
+
+      embedding:
+        model: nomic-embed-text
+
+  chat:
+    memory:
+      repository:
+        jdbc:
+          initialize-schema: never
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+  numverify:
+    api-key: ${NUMVERIFY_API_KEY}
+
+accounting:
+  base-url: http://localhost:8002
