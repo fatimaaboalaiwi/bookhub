@@ -2,6 +2,7 @@
 package com.company.bookhub.book.messaging;
 
 import com.company.bookhub.book.messaging.dto.BulkBookMessage;
+import com.company.bookhub.book.service.BulkBookProcessingResult;
 import com.company.bookhub.book.service.BulkBookProcessingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,14 +27,38 @@ public class BulkBookConsumer {
         log.info(
                 "Received bulk book batch. Batch ID: {}, Number of books: {}",
                 message.batchId(),
-                message.books().size()
+                message.books() == null ? 0 : message.books().size()
         );
 
-        processingService.processBooks(message.books());
+        BulkBookProcessingResult result = processingService.processBatch(
+                message.batchId(),
+                message.books()
+        );
+
+        if (result.alreadyProcessed()) {
+            log.warn(
+                    "Duplicate batch ignored. Batch ID: {}",
+                    message.batchId()
+            );
+            return;
+        }
 
         log.info(
-                "Successfully processed bulk book batch. Batch ID: {}",
-                message.batchId()
+                "Bulk book batch completed. Batch ID: {}, Received: {}, Added: {}, Failed: {}",
+                message.batchId(),
+                result.receivedCount(),
+                result.addedCount(),
+                result.failedCount()
         );
+
+        for (var failure : result.failures()) {
+            log.warn(
+                    "Book {} failed in batch {}. ISBN: {}, Errors: {}",
+                    failure.bookNumber(),
+                    message.batchId(),
+                    failure.isbn(),
+                    failure.errors()
+            );
+        }
     }
 }

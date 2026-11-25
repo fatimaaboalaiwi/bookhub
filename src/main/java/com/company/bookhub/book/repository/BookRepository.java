@@ -19,7 +19,8 @@ public interface BookRepository
         JpaSpecificationExecutor<Book> {
 
     boolean existsByIsbn(String isbn);
-
+    // Retrieves existing books matching multiple ISBNs.
+    List<Book> findAllByIsbnIn(Collection<String> isbns);
     // Locks a book row for exclusive inventory updates.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT b FROM Book b WHERE b.id = :id")
