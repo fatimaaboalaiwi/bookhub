@@ -3,10 +3,8 @@ package com.company.bookhub.Controller.catalog;
 
 import com.company.bookhub.book.dto.BookRequest;
 import com.company.bookhub.book.dto.BookResponse;
-import com.company.bookhub.book.dto.BulkBookRequest;
 import com.company.bookhub.book.dto.PurchaseResponse;
 import com.company.bookhub.book.messaging.BulkBookProducer;
-import com.company.bookhub.book.messaging.dto.BulkBookMessage;
 import com.company.bookhub.book.service.BookService;
 import com.company.bookhub.book.service.PurchaseService;
 import com.company.bookhub.common.constant.ApiPaths;
@@ -65,36 +63,6 @@ public class BookController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
-    }
-
-    // =========================
-    // BULK CREATE
-    // =========================
-
-    @Operation(
-            summary = "Submit books in bulk",
-            description = "Publishes a batch of books to RabbitMQ for asynchronous processing. Requires BOOK_CREATE permission."
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "202", description = "Book batch accepted for processing"),
-            @ApiResponse(responseCode = "400", description = "Validation failed"),
-            @ApiResponse(responseCode = "403", description = "Missing BOOK_CREATE permission")
-    })
-    @PreAuthorize("hasAuthority('BOOK_CREATE')")
-    @PostMapping("/bulk")
-    public ResponseEntity<Map<String, Object>> createBulk(
-            @Valid @RequestBody BulkBookRequest request) {
-
-        BulkBookMessage message =
-                bulkBookProducer.publishBooks(request.books());
-
-        return ResponseEntity
-                .status(HttpStatus.ACCEPTED)
-                .body(Map.of(
-                        "message", "Book batch accepted for processing",
-                        "batchId", message.batchId(),
-                        "numberOfBooks", message.books().size()
-                ));
     }
 
     // =========================

@@ -18,19 +18,4 @@ public class BulkBookProducer {
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    public BulkBookMessage publishBooks(List<BookRequest> books) {
-
-        BulkBookMessage message = new BulkBookMessage(
-                UUID.randomUUID(),
-                List.copyOf(books)
-        );
-
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.EXCHANGE_NAME,
-                RabbitMQConfig.BULK_BOOK_ROUTING_KEY,
-                message
-        );
-
-        return message;
-    }
 }

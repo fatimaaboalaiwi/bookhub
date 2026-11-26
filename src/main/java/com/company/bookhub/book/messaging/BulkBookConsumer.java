@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class BulkBookConsumer {
 
@@ -25,27 +27,24 @@ public class BulkBookConsumer {
     public void consumeBulkBooks(BulkBookMessage message) {
 
         log.info(
-                "Received bulk book batch. Batch ID: {}, Number of books: {}",
-                message.batchId(),
+                "Received bulk book batch. Number of books: {}",
                 message.books() == null ? 0 : message.books().size()
         );
 
+        UUID id = UUID.randomUUID();
         BulkBookProcessingResult result = processingService.processBatch(
-                message.batchId(),
+                UUID.randomUUID(),
                 message.books()
         );
 
         if (result.alreadyProcessed()) {
-            log.warn(
-                    "Duplicate batch ignored. Batch ID: {}",
-                    message.batchId()
-            );
+            log.warn( "Duplicate batch ignored. Batch ID: {}", id);
             return;
         }
 
         log.info(
                 "Bulk book batch completed. Batch ID: {}, Received: {}, Added: {}, Failed: {}",
-                message.batchId(),
+                id,
                 result.receivedCount(),
                 result.addedCount(),
                 result.failedCount()
@@ -55,7 +54,7 @@ public class BulkBookConsumer {
             log.warn(
                     "Book {} failed in batch {}. ISBN: {}, Errors: {}",
                     failure.bookNumber(),
-                    message.batchId(),
+                    id,
                     failure.isbn(),
                     failure.errors()
             );
